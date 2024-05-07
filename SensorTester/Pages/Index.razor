@@ -1,0 +1,537 @@
+﻿@page "/"
+@implements IAsyncDisposable
+<PageTitle>Home</PageTitle>
+<h1>PieceCounter Sensor Tester</h1>
+<div class="row mb-3">
+    <div class="col">
+        <button type="button" class="btn btn-primary" @onclick="RequestDevice">Request Device</button>
+    </div>
+</div>
+<div class="row mb-3">
+    <div class="col">
+        <button type="button" class="btn btn-primary" @onclick="AddDigitalInput">Add Digital Input</button>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Description</th>
+                    <th>Serial#</th>
+                    <th>Channel</th>
+                    <th>HubPort</th>
+                    <th>IsHubPortDevice</th>
+                    <th>IsLocal</th>
+                    <th>IsRemote</th>
+                    <th>Input Mode</th>
+                    <th>Power Supply</th>
+                    <th>High Count</th>
+                    <th>Low Count</th>
+                    <th class="text-center">Is Open</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var digitalInput in digitalInputs.Values)
+                {
+                    <tr>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    disabled="@digitalInput.IsOpen"
+                                    @onclick="() => EditDigitalInput(digitalInput)">
+                                Edit
+                            </button>
+                        </td>
+                        <td>@digitalInput.Description</td>
+                        <td>@digitalInput.DeviceSerialNumber</td>
+                        <td>@digitalInput.Channel</td>
+                        <td>@digitalInput.HubPort</td>
+                        <td>@digitalInput.IsHubPortDevice</td>
+                        <td>@digitalInput.IsLocal</td>
+                        <td>@digitalInput.IsRemote</td>
+                        <td>@digitalInput.InputMode?.ToString()</td>
+                        <td>@digitalInput.PowerSupply?.ToString()</td>
+                        <td>@digitalInput.HighCount&nbsp;<button type="button" class="btn btn-primary" @onclick="() => digitalInput.HighCount = 0">Reset</button></td>
+                        <td>@digitalInput.LowCount&nbsp;<button type="button" class="btn btn-primary" @onclick="() => digitalInput.LowCount = 0">Reset</button></td>
+                        <td class="text-center">
+                            @if (digitalInput.IsOpening && !digitalInput.IsOpen)
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @digitalInput.IsOpen
+                            }
+                            
+                        </td>
+                        <td>
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    @onclick="async () => await OpenCloseDigitalInput(digitalInput)">
+                                @(digitalInput.IsOpen || digitalInput.IsOpening ? "Close" : "Open")
+                            </button>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    disabled="@digitalInput.IsOpen"
+                                    @onclick="() => DeleteDigitalInput(digitalInput.Id)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col">
+        <button type="button" class="btn btn-primary" @onclick="AddDigitalOutput">Add Digital Output</button>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Description</th>
+                    <th>Serial#</th>
+                    <th>Channel</th>
+                    <th>HubPort</th>
+                    <th>IsHubPortDevice</th>
+                    <th>IsLocal</th>
+                    <th>IsRemote</th>
+                    <th>Milliseconds</th>
+                    <th>Cycles</th>
+                    <th class="text-center">Is Open</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var digitalOutput in digitalOutputs.Values)
+                {
+                    <tr>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    disabled="@digitalOutput.IsOpen"
+                                    @onclick="() => EditDigitalOutput(digitalOutput)">
+                                Edit
+                            </button>
+                        </td>
+                        <td>@digitalOutput.Description</td>
+                        <td>@digitalOutput.DeviceSerialNumber</td>
+                        <td>@digitalOutput.Channel</td>
+                        <td>@digitalOutput.HubPort</td>
+                        <td>@digitalOutput.IsHubPortDevice</td>
+                        <td>@digitalOutput.IsLocal</td>
+                        <td>@digitalOutput.IsRemote</td>
+                        <td>@digitalOutput.MillisecondsBetweenStateChange</td>
+                        <td>@digitalOutput.NumberOfStateChanges</td>
+                        <td class="text-center">
+                            @if (digitalOutput.IsOpening && !digitalOutput.IsOpen)
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                @digitalOutput.IsOpen
+                            }
+                        </td>
+                        <td>
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    @onclick="async () => await OpenCloseDigitalOutput(digitalOutput)">
+                                @(digitalOutput.IsOpen || digitalOutput.IsOpening ? "Close" : "Open")
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-primary" 
+                                    disabled="@(!digitalOutput.IsOpen)" 
+                                    @onclick="async () => await RunDigitalOutput(digitalOutput)">
+                                @(digitalOutput.CancellationTokenSource == null ? "Run" : "Stop")
+                            </button>
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    disabled="@digitalOutput.IsOpen"
+                                    @onclick="() => DeleteDigitalOutput(digitalOutput.Id)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+@code {
+    [Inject] public Phidgets phidgets { get; set; } = default!;
+    [Inject] public USBConnection usbConnection { get; set; } = default!;
+    [Inject] public IToastService toastService { get; set; } = default!;
+    [Inject] public ILocalStorageService localStorage { get; set; } = default!;
+    [CascadingParameter] IModalService Modal { get; set; } = default!;
+    private Dictionary<string, DigitalInput> digitalInputs = new();
+    private Dictionary<string, DigitalOutput> digitalOutputs = new();
+
+    protected override void OnInitialized()
+    {
+        phidgets.Attach += Phidgets_Attach;
+        phidgets.Detach += Phidgets_Detach;
+        phidgets.Error += Phidgets_Error;
+        phidgets.StateChange += Phidgets_StateChange;
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await LoadDigitalInputs();
+                await LoadDigitalOutputs();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+            }
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadDigitalInputs()
+    {
+        digitalInputs = await localStorage.GetItemAsync<Dictionary<string, DigitalInput>>("DigitalInputs")
+            ?? new();
+        foreach (var digitalInput in digitalInputs.Values)
+        {
+            await phidgets.NewDigitalInput(digitalInput.Id);
+            await OpenCloseDigitalInput(digitalInput);
+        }
+
+    }
+
+    private async Task SaveDigitalInputs()
+    {
+        await localStorage.SetItemAsync<Dictionary<string, DigitalInput>>("DigitalInputs", digitalInputs);
+    }
+
+    private async Task LoadDigitalOutputs()
+    {
+        digitalOutputs = await localStorage.GetItemAsync<Dictionary<string, DigitalOutput>>("DigitalOutputs")
+            ?? new();
+        foreach (var digitalOutput in digitalOutputs.Values)
+        {
+            await phidgets.NewDigitalOutput(digitalOutput.Id);
+            await OpenCloseDigitalOutput(digitalOutput);
+        }
+
+    }
+
+    private async Task SaveDigitalOutputs()
+    {
+        await localStorage.SetItemAsync<Dictionary<string, DigitalOutput>>("DigitalOutputs", digitalOutputs);
+    }
+
+    private async Task RequestDevice()
+    {
+        await usbConnection.RequestWebUSBDeviceAccess();
+    }
+
+    public async void Phidgets_Attach(object? sender, string id)
+    {
+        try
+        {
+            if (digitalInputs.TryGetValue(id, out var digitalInput))
+            {
+                digitalInput.IsOpen = true;
+                if (digitalInput.InputMode.HasValue)
+                    await phidgets.SetInputMode(digitalInput.Id, digitalInput.InputMode.Value);
+                if (digitalInput.PowerSupply.HasValue)
+                    await phidgets.SetPowerSupply(digitalInput.Id, digitalInput.PowerSupply.Value);
+            }
+            if (digitalOutputs.TryGetValue(id, out var digitalOutput))
+            {
+                digitalOutput.IsOpen = true;
+            }
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async void Phidgets_Detach(object? sender, string id)
+    {
+        if (digitalInputs.TryGetValue(id, out var digitalInput))
+        {
+            digitalInput.IsOpen = false;
+        }
+        if (digitalOutputs.TryGetValue(id, out var digitalOutput))
+        {
+            digitalOutput.IsOpen = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async void Phidgets_Error(object? sender, PhidgetErrorEventArgs e)
+    {
+        toastService.ShowError($"{e.Code}: {e.Message}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Phidgets_StateChange(object? sender, StateChangeEventArgs e)
+    {
+        if (digitalInputs.TryGetValue(e.Id, out var digitalInput))
+        {
+            if (e.State)
+                digitalInput.HighCount++;
+            else
+                digitalInput.LowCount++;
+            StateHasChanged();
+        }
+    }
+
+    public async Task AddDigitalInput()
+    {
+        try
+        {
+            var digitalInput = new DigitalInput();
+            var parameters = new ModalParameters()
+                .Add(nameof(DigitalInput), digitalInput);
+            var modal = Modal.Show<SensorTester.Pages.DigitalInputForm>("Add Digital Input", parameters);
+            var results = await modal.Result;
+            if (results.Confirmed && results.Data is DigitalInput)
+            {
+                digitalInput = (DigitalInput)results.Data;
+                digitalInputs.Add(digitalInput.Id, digitalInput);
+                await phidgets.NewDigitalInput(digitalInput.Id);
+                await SaveDigitalInputs();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task EditDigitalInput(DigitalInput digitalInput)
+    {
+        try
+        {
+            var parameters = new ModalParameters()
+                .Add(nameof(DigitalInput), digitalInput);
+            var modal = Modal.Show<DigitalInputForm>("Edit Digital Input", parameters);
+            var results = await modal.Result;
+            await SaveDigitalInputs();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task DeleteDigitalInput(string id)
+    {
+        try
+        {
+            if (digitalInputs.TryGetValue(id, out var digitalInput))
+            {
+                await phidgets.Delete(id);
+                digitalInputs.Remove(id);
+                await SaveDigitalInputs();
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task DeleteDigitalOutput(string id)
+    {
+        try
+        {
+            if (digitalOutputs.TryGetValue(id, out var digitalOutput))
+            {
+                await phidgets.Delete(id);
+                digitalOutputs.Remove(id);
+                await SaveDigitalOutputs();
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task AddDigitalOutput()
+    {
+        try
+        {
+            var digitalOutput = new DigitalOutput();
+            var parameters = new ModalParameters()
+                .Add(nameof(DigitalOutput), digitalOutput);
+            var modal = Modal.Show<DigitalOutputForm>("Add Digital Output", parameters);
+            var results = await modal.Result;
+            if (results.Confirmed && results.Data is DigitalOutput)
+            {
+                digitalOutput = (DigitalOutput)results.Data;
+                digitalOutputs.Add(digitalOutput.Id, digitalOutput);
+                await phidgets.NewDigitalOutput(digitalOutput.Id);
+                await SaveDigitalOutputs();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task EditDigitalOutput(DigitalOutput digitalOutput)
+    {
+        try
+        {
+            var parameters = new ModalParameters()
+                .Add(nameof(DigitalOutput), digitalOutput);
+            var modal = Modal.Show<DigitalOutputForm>("Add Digital Output", parameters);
+            var results = await modal.Result;
+            await SaveDigitalOutputs();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task OpenCloseDigitalInput(DigitalInput digitalInput)
+    {
+        try
+        {
+            if (digitalInput.IsOpen || digitalInput.IsOpening)
+            {
+                digitalInput.IsOpening = false;
+                await phidgets.Close(digitalInput.Id);
+            }
+            else
+            {
+                if (digitalInput.DeviceSerialNumber.HasValue)
+                    await phidgets.SetDeviceSerialNumber(digitalInput.Id, digitalInput.DeviceSerialNumber.Value);
+                if (digitalInput.HubPort.HasValue)
+                    await phidgets.SetHubPort(digitalInput.Id, digitalInput.HubPort.Value);
+                await phidgets.SetIsHubPortDevice(digitalInput.Id, digitalInput.IsHubPortDevice);
+                if (digitalInput.Channel.HasValue)
+                    await phidgets.SetChannel(digitalInput.Id, digitalInput.Channel.Value);
+                await phidgets.SetIsLocal(digitalInput.Id, digitalInput.IsLocal);
+                await phidgets.SetIsRemote(digitalInput.Id, digitalInput.IsRemote);
+                await phidgets.Open(digitalInput.Id);
+                digitalInput.IsOpening = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task OpenCloseDigitalOutput(DigitalOutput digitalOutput)
+    {
+        try
+        {
+            if (digitalOutput.IsOpen || digitalOutput.IsOpening)
+            {
+                digitalOutput.IsOpening = false;
+                await phidgets.Close(digitalOutput.Id);
+            }
+            else
+            {
+                if (digitalOutput.DeviceSerialNumber.HasValue)
+                    await phidgets.SetDeviceSerialNumber(digitalOutput.Id, digitalOutput.DeviceSerialNumber.Value);
+                if (digitalOutput.HubPort.HasValue)
+                    await phidgets.SetHubPort(digitalOutput.Id, digitalOutput.HubPort.Value);
+                await phidgets.SetIsHubPortDevice(digitalOutput.Id, digitalOutput.IsHubPortDevice);
+                if (digitalOutput.Channel.HasValue)
+                    await phidgets.SetChannel(digitalOutput.Id, digitalOutput.Channel.Value);
+                await phidgets.SetIsLocal(digitalOutput.Id, digitalOutput.IsLocal);
+                await phidgets.SetIsRemote(digitalOutput.Id, digitalOutput.IsRemote);
+                await phidgets.Open(digitalOutput.Id);
+                digitalOutput.IsOpening = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
+    public async Task RunDigitalOutput(DigitalOutput digitalOutput)
+    {
+        if (digitalOutput.CancellationTokenSource == null)
+        {
+            digitalOutput.CancellationTokenSource = new CancellationTokenSource();
+            var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(digitalOutput.MillisecondsBetweenStateChange));
+            try
+            {
+
+                int cycles = 0;
+                var currentState = await phidgets.GetState(digitalOutput.Id);
+                while (await periodicTimer.WaitForNextTickAsync(digitalOutput.CancellationTokenSource.Token))
+                {
+                    currentState = !currentState;
+                    await phidgets.SetState(digitalOutput.Id, currentState);
+                    if (++cycles >= digitalOutput.NumberOfStateChanges)
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.InnerException?.Message ?? ex.Message);
+            }
+            finally
+            {
+                digitalOutput.CancellationTokenSource.Cancel();
+                digitalOutput.CancellationTokenSource.Dispose();
+                periodicTimer.Dispose();
+                digitalOutput.CancellationTokenSource = null;
+            }
+        }
+        else
+        {
+            digitalOutput.CancellationTokenSource.Cancel();
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        phidgets.Attach -= Phidgets_Attach;
+        phidgets.Detach -= Phidgets_Detach;
+        phidgets.Error -= Phidgets_Error;
+        phidgets.StateChange -= Phidgets_StateChange;
+        try
+        {
+            await phidgets.CloseAll();
+        }
+        catch { }
+    }
+}

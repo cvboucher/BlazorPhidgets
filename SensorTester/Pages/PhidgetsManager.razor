@@ -1,0 +1,148 @@
+﻿@page "/PhidgetsManager"
+@implements IDisposable
+@inject Manager manager
+@inject USBConnection usbConnection
+
+<h3>Phidgets Manager</h3>
+
+<button type="button" class="btn btn-primary" @onclick="RequestDevice">Request Device</button>
+
+<div class="row">
+    <div class="col">
+        <h4 class="text-center">Channels</h4>
+
+        <table class="table table-striped">
+            <tr>
+                <th>Key</th>
+                <th>Serial Number</th>
+                <th>Channel Class Name</th>
+                <th>Device Name</th>
+                <th>Channel Number</th>
+                <th>HubPort</th>
+                <th>Is HubPort Device</th>
+                <th>Is Local</th>
+                <th>Is remote</th>
+            </tr>
+            @foreach (var channel in channels.Where(x => x.ChannelClassName == "PhidgetDigitalInput").OrderBy(x => x.Key))
+            {
+                <tr>
+                    <td>@channel.Key</td>
+                    <td>@channel.DeviceSerialNumber</td>
+                    <td>@channel.ChannelClassName</td>
+                    <td>@channel.DeviceName</td>
+                    <td>@channel.ChannelNumber</td>
+                    <td>@channel.HubPort</td>
+                    <td>@channel.IsHubPortDevice</td>
+                    <td>@channel.IsLocal</td>
+                    <td>@channel.IsRemote</td>
+                </tr>
+            }
+        </table>
+    </div>
+    @* <div class="col">
+    <h4 class="text-center">Devices</h4>
+    <table class="table table-striped">
+    <tr>
+    <th>Key</th>
+    <th>Serial Number</th>
+    <th>Device Name</th>
+    <th>Channel Number</th>
+    <th>HubPort</th>
+    <th>Is HubPort Device</th>
+    <th>Is Local</th>
+    <th>Is remote</th>
+    </tr>
+    @foreach (var device in devices.OrderBy(x => x.Key))
+    {
+    <tr>
+    <td>@device.Key</td>
+    <td>@device.DeviceSerialNumber</td>
+    <td>@device.DeviceName</td>
+    <td>@device.ChannelNumber</td>
+    <td>@device.HubPort</td>
+    <td>@device.IsHubPortDevice</td>
+    <td>@device.IsLocal</td>
+    <td>@device.IsRemote</td>
+    </tr>
+    }
+    </table>
+    </div> *@
+</div>
+
+@code {
+    private List<Channel> channels = new();
+    //private List<Channel> devices = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender)
+        {
+            // await usbConnection.Init();
+            // await usbConnection.Connect();
+            // await manager.Init();
+            // await manager.Open();
+            channels = await manager.GetChannels();
+            //devices = await manager.GetDevices();
+            manager.Attach += Manager_Attach;
+            manager.Detach += Manager_Detach;
+            // manager.DeviceAttach += Manager_DeviceAttach;
+            // manager.DeviceDetach += Manager_DeviceDetach;
+            StateHasChanged();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task RequestDevice()
+    {
+        await usbConnection.RequestWebUSBDeviceAccess();
+    }
+
+    public void Manager_Attach(object? sender, Channel channel)
+    {
+        if (!channels.Any(x => x.Key == channel.Key))
+        {
+            channels.Add(channel);
+            StateHasChanged();
+        }
+    }
+
+    public void Manager_Detach(object? sender, Channel channel)
+    {
+        var existingChannel = channels.FirstOrDefault(x => x.Key == channel.Key);
+        if (existingChannel != null)
+        {
+            channels.Remove(existingChannel);
+            StateHasChanged();
+        }
+
+    }
+
+    // public void Manager_DeviceAttach(object? sender, Channel channel)
+    // {
+    //     if (!devices.Any(x => x.Key == channel.Key))
+    //     {
+    //         devices.Add(channel);
+    //         StateHasChanged();
+    //     }
+    // }
+
+    // public void Manager_DeviceDetach(object? sender, Channel channel)
+    // {
+    //     var existingDevice = devices.FirstOrDefault(x => x.Key == channel.Key);
+    //     if (existingDevice != null)
+    //     {
+    //         devices.Remove(existingDevice);
+    //         StateHasChanged();
+    //     }
+
+    // }
+
+    public void Dispose()
+    {
+        manager.Attach -= Manager_Attach;
+        manager.Detach -= Manager_Detach;
+        // manager.DeviceAttach -= Manager_DeviceAttach;
+        // manager.DeviceDetach -= Manager_DeviceDetach;
+    }
+}

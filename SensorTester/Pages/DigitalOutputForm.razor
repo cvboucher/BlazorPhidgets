@@ -1,0 +1,53 @@
+﻿@if (DigitalOutput != null)
+{
+    <EditForm Model="@DigitalOutput" OnValidSubmit="OnSubmit">
+        <div class="mb-3">
+            <label>Description</label>
+            <InputText @bind-Value="@DigitalOutput.Description" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Serial #</label>
+            <InputNumber @bind-Value="@DigitalOutput.DeviceSerialNumber" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Hub Port</label>
+            <InputNumber @bind-Value="@DigitalOutput.HubPort" class="form-control" />
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalOutput.IsHubPortDevice" class="form-check-input" />
+            <label class="form-check-label">Is Hub Port Device</label>
+        </div>
+        <div class="mb-3">
+            <label>Channel</label>
+            <InputNumber @bind-Value="@DigitalOutput.Channel" class="form-control" />
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalOutput.IsLocal" class="form-check-input" />
+            <label class="form-check-label">Is Local</label>
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalOutput.IsRemote" class="form-check-input" />
+            <label class="form-check-label">Is Remote</label>
+        </div>
+        <div class="mb-3">
+            <label>Milliseconds Between State Change</label>
+            <InputNumber @bind-Value="@DigitalOutput.MillisecondsBetweenStateChange" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Number Of State Changes</label>
+            <InputNumber @bind-Value="@DigitalOutput.NumberOfStateChanges" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+    </EditForm>
+}
+
+
+@code {
+    [Parameter, EditorRequired] public DigitalOutput DigitalOutput { get; set; } = default!;
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    public async Task OnSubmit()
+    {
+        await BlazoredModal.CloseAsync(ModalResult.Ok(DigitalOutput));
+    }
+}

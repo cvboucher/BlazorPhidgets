@@ -1,0 +1,61 @@
+﻿@if (DigitalInput != null)
+{
+    <EditForm Model="@DigitalInput" OnValidSubmit="OnSubmit">
+        <div class="mb-3">
+            <label>Description</label>
+            <InputText @bind-Value="@DigitalInput.Description" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Serial #</label>
+            <InputNumber @bind-Value="@DigitalInput.DeviceSerialNumber" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Hub Port</label>
+            <InputNumber @bind-Value="@DigitalInput.HubPort" class="form-control" />
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalInput.IsHubPortDevice" class="form-check-input" />
+            <label class="form-check-label">Is Hub Port Device</label>
+        </div>
+        <div class="mb-3">
+            <label>Channel</label>
+            <InputNumber @bind-Value="@DigitalInput.Channel" class="form-control" />
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalInput.IsLocal" class="form-check-input" />
+            <label class="form-check-label">Is Local</label>
+        </div>
+        <div class="mb-3 form-check">
+            <InputCheckbox @bind-Value="@DigitalInput.IsRemote" class="form-check-input" />
+            <label class="form-check-label">Is Remote</label>
+        </div>
+        <div class="mb-3 form-check">
+            <label>Input Mode</label><br />
+            <InputRadioGroup @bind-Value="@DigitalInput.InputMode">
+                <InputRadio Value="@((InputMode?)null)" />&nbsp;Not Set<br />
+                <InputRadio Value="InputMode.NPN" />&nbsp;NPN<br />
+                <InputRadio Value="InputMode.PNP" />&nbsp;PNP
+            </InputRadioGroup>
+        </div>
+        <div class="mb-3 form-check">
+            <label>Power Supply</label><br />
+            <InputRadioGroup @bind-Value="@DigitalInput.PowerSupply">
+                <InputRadio Value="@((PowerSupply?)null)" />&nbsp;Not Set<br />
+                <InputRadio Value="PowerSupply.VOLTS_12" />&nbsp;12 Volt<br />
+                <InputRadio Value="PowerSupply.VOLTS_24" />&nbsp;24 Volt
+            </InputRadioGroup>
+        </div>
+        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+    </EditForm>
+}
+
+
+@code {
+    [Parameter, EditorRequired] public DigitalInput DigitalInput { get; set; } = default!;
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    public async Task OnSubmit()
+    {
+        await BlazoredModal.CloseAsync(ModalResult.Ok(DigitalInput));
+    }
+}
