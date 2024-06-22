@@ -51,6 +51,11 @@ namespace BlazorPhidgets
             return await GetProperty<InputMode>(id, "inputMode");
         }
 
+        public async Task<DeviceId> GetDeviceId(string id)
+        {
+            return await GetProperty<DeviceId>(id, "deviceID");
+        }
+
         public async Task Delete(string id)
         {
             var module = await Init();
@@ -80,9 +85,9 @@ namespace BlazorPhidgets
         }
 
         [JSInvokable]
-        public void OnStateChange(string id, bool state)
+        public void OnStateChange(string id, bool state, DeviceId deviceId)
         {
-            StateChange?.Invoke(this, new StateChangeEventArgs(id, state));
+            StateChange?.Invoke(this, new StateChangeEventArgs(id, state, deviceId));
         }
 
         // Digital Output

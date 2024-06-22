@@ -9,7 +9,7 @@ export function newDigitalInput(id) {
     var phidget = new phidget22.DigitalInput();
     phidgets.push(phidget);
     phidget.onStateChange = function (state) {
-        dotNetObject.invokeMethodAsync("OnStateChange", this.id, state);
+        dotNetObject?.invokeMethodAsync("OnStateChange", this.id, state, this.deviceID);
     }
     newPhidget(phidget);
     phidget.id = id;
